@@ -230,12 +230,12 @@ RC pinPage (BM_BufferPool *const bm, BM_PageHandle *const page,
         bool void_page=FALSE;
         bool foundedPage=FALSE;
         bool UpdatedStra_found=FALSE;
-        int read_code;
-        int record_pointer;
-        int memory_address;
-        int swap_location;
+        int read_code = 0;
+        int record_pointer = 0;
+        int memory_address = 0;
+        int swap_location = 0;
         
-        SM_PageHandle page_handle;
+        SM_PageHandle page_handle = NULL;
         buffer_pool=bm->mgmtData;
         buffer_pool = bm->mgmtData;
         

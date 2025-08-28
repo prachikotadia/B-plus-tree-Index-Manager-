@@ -13,7 +13,33 @@
 extern int getAttrPos (Schema *schema, int attrNum);
 static void prepareTableHeader(char **tableHeaderPtr, TableManager *tableManager, Schema *schema);
 static void populateSchemaDetails(char **tableHeaderPtr, Schema *schema);
-static void handleCleanup(BM_BufferPool *bufferPool, BM_PageHandle *pageHandle, TableManager *tableManager); 
+static void handleCleanup(BM_BufferPool *bufferPool, BM_PageHandle *pageHandle, TableManager *tableManager);
+
+// Forward declarations for helper functions
+static int readIntFromHeader(char **header);
+static void* allocateArray(size_t elementCount, size_t elementSize);
+static void setSchemaAttributes(Schema *schema, char **tableHeader);
+
+// Helper function implementations
+static int readIntFromHeader(char **header) {
+    int value = *(int *)(*header);
+    *header += sizeof(int);
+    return value;
+}
+
+static void* allocateArray(size_t elementCount, size_t elementSize) {
+    return calloc(elementCount, elementSize);
+}
+
+static void setSchemaAttributes(Schema *schema, char **tableHeader) {
+    schema->numAttr = readIntFromHeader(tableHeader);
+    schema->keySize = readIntFromHeader(tableHeader);
+
+    schema->attrNames = allocateArray(schema->numAttr, sizeof(char *));
+    schema->dataTypes = allocateArray(schema->numAttr, sizeof(DataType));
+    schema->typeLength = allocateArray(schema->numAttr, sizeof(int));
+    schema->keyAttrs = allocateArray(schema->keySize, sizeof(int));
+} 
 
 
 RC initRecordManager(void *mgmtData) {
@@ -149,7 +175,7 @@ void populateSchemaDetails(char **tableHeaderPtr, Schema *schema) {
 }
 
 RC openTable(RM_TableData *rel, char *name) {
-    RC resultCode;
+    RC resultCode = RC_OK;
     int attributeIndex;
     TableManager *tableManager = calloc(1, sizeof(TableManager));
     BM_BufferPool *bufferManager = calloc(1, sizeof(BM_BufferPool));
@@ -188,26 +214,6 @@ RC openTable(RM_TableData *rel, char *name) {
     *(int *)&tableManager->firstFreePageNum = *(int *)tableHeader; tableHeader += sizeof(int);
     *(int *)&tableManager->firstFreeSlotNum = *(int *)tableHeader; tableHeader += sizeof(int);
     *(int *)&tableManager->firstDataPageNum = *(int *)tableHeader; tableHeader += sizeof(int);
-
-
-    int readIntFromHeader(char **header) {
-        int value = *(int *)(*header);
-        *header += sizeof(int);
-        return value;
-    }
-    void* allocateArray(size_t elementCount, size_t elementSize) {
-        return calloc(elementCount, elementSize);
-    }
-
-    void setSchemaAttributes(Schema *schema, char **tableHeader) {
-        schema->numAttr = readIntFromHeader(tableHeader);
-        schema->keySize = readIntFromHeader(tableHeader);
-
-        schema->attrNames = allocateArray(schema->numAttr, sizeof(char *));
-        schema->dataTypes = allocateArray(schema->numAttr, sizeof(DataType));
-        schema->typeLength = allocateArray(schema->numAttr, sizeof(int));
-        schema->keyAttrs = allocateArray(schema->keySize, sizeof(int));
-    }
 
     setSchemaAttributes(schema, &tableHeader);
 
@@ -310,7 +316,7 @@ RC closeTable(RM_TableData *rel) {
 }
 
 RC deleteTable(char *name) {
-    RC resultCode;
+    RC resultCode = RC_OK;
 
     if (!name || name[0] == '\0') {
         resultCode = RC_INVALID_HEADER;

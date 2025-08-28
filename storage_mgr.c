@@ -108,10 +108,10 @@ RC closePageFile(SM_FileHandle *fHandle) {
             free(pageData);
             return RC_CLOSE_FAILED;
         }
-         }
+    }
     free(pageData);
     return RC_OK;
-    }
+}
 }
 
 // Define destroy a Page file 
